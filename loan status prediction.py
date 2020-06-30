@@ -235,8 +235,11 @@ pd.DataFrame(submission, columns=['Loan_ID','Loan_Status']).to_csv('logistic.csv
 from sklearn.model_selection import StratifiedKFold
 #Now let’s make a cross validation logistic model with stratified 5 folds and make predictions for test dataset.
 
-i=1 kf = StratifiedKFold(n_splits=5,random_state=1,shuffle=True)
- for train_index,test_index in kf.split(X,y):     print('\n{} of kfold {}'.format(i,kf.n_splits))   
+i=1 
+kf = StratifiedKFold(n_splits=5,random_state=1,shuffle=True)
+for train_index,test_index in kf.split(X,y):   
+   print('\n{} of kfold {}'.format(i,kf.n_splits))   
+
 xtr,xvl = X.loc[train_index],X.loc[test_index] 
 ytr,yvl = y[train_index],y[test_index]      
 model = LogisticRegression(random_state=1) 
@@ -261,3 +264,29 @@ submission['Loan_Status'].replace(0, 'N',inplace=True) submission['Loan_Status']
 
 pd.DataFrame(submission, columns=['Loan_ID','Loan_Status']).to_csv('Logistic.csv')
 #From this submission we got an accuracy of 0.78472 on the leaderboard. Now we will try to improve this accuracy using different approaches.
+#Feature Enginering-create a new feature of total income
+train['Total_Income']=train['ApplicantIncome']+train['CoapplicantIncome'] test['Total_Income']=test['ApplicantIncome']+test['CoapplicantIncome']
+Let’s check the distribution of Total Income.
+
+sns.distplot(train['Total_Income']);
+#We can see it is shifted towards left, i.e., the distribution is right skewed. 
+#So, let’s take the log transformation to make the distribution normal.
+
+train['Total_Income_log'] = np.log(train['Total_Income']) sns.distplot(train['Total_Income_log']); 
+test['Total_Income_log'] = np.log(test['Total_Income']
+ # Now the distribution looks much closer to normal and effect of extreme values has been significantly subsided. 
+  #Let’s createFEATURE 2-> the EMI feature now.
+
+train['EMI']=train['LoanAmount']/train['Loan_Amount_Term'] test['EMI']=test['LoanAmount']/test['Loan_Amount_Term']
+Let’s check the distribution of EMI variable.
+
+sns.distplot(train['EMI']);
+#3.feATURELet us create Balance Income feature now and check its distribution.
+
+train['Balance Income']=train['Total_Income']-(train['EMI']*1000) # Multiply with 1000 to make the units equal test['Balance Income']=test['Total_Income']-(test['EMI']*1000)
+sns.distplot(train['Balance Income']);
+#Let us now drop the variables which we used to create these new features. 
+#Reason for doing this is, the correlation between those old features and these 
+#new features will be very high and logistic regression assumes that the variables are not highly correlated. 
+train=train.drop(['ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term'], axis=1) 
+test=test.drop(['ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term'], axis=1)
